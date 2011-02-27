@@ -55,11 +55,20 @@
         (format nil "~A/~A" prefix name)
         name)))
 
+#+win32
+(defun clean-path-win32 (path)
+  (let ((illegal-chars '(#\: #\* #\? #\" #\< #\> #\|))
+		(result (copy-seq (file-namestring path))))
+	(merge-pathnames (dolist (c illegal-chars result)
+					   (nsubstitute #\_ c result))
+					 path)))
+
 (defun save-file (file size stream)
   (multiple-value-bind (full-blocks partial)
       (truncate size 512)
     (ensure-directories-exist file)
-    (with-open-file (outstream file
+    (with-open-file (outstream #-win32 file
+							   #+win32 (clean-path-win32 file)
                      :direction :output
                      :if-exists :supersede
                      :element-type '(unsigned-byte 8))
